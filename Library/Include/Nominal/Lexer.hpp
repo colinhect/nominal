@@ -24,9 +24,56 @@
 #pragma once
 
 #include "Export.hpp"
+#include <stack>
+
+namespace nominal
+{
+
+enum class TokenType
+{
+    Symbol,
+    Operator,
+    Identifier,
+    String,
+    Number
+};
+
+typedef unsigned TokenId;
 
 class NOM_EXPORT Lexer
 {
 public:
+    Lexer(const char* source);
 
+    bool next();
+
+    TokenType token_type() const;
+    TokenId token_Id() const;
+
+    void push_state();
+    bool pop_state(bool restore);
+
+private:
+    char read_next();
+    char peak_next();
+    bool skip_whitespace();
+
+    struct State
+    {
+        unsigned index{ 0 };
+        unsigned line{ 0 };
+        unsigned token_start_index{ 0 };
+        unsigned token_length{ 0 };
+        TokenType token_type{ TokenType::Symbol };
+        TokenId token_id{ 0 };
+        bool skipped_whitespace{ false };
+        bool skipped_new_line{ false };
+        bool end_of_input{ false };
+    };
+
+    const char* _source;
+    State _current_state;
+    std::stack<State> _state_stack;
 };
+
+}
