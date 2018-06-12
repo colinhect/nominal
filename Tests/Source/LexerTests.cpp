@@ -27,17 +27,39 @@
 
 using namespace nominal;
 
-SCENARIO("Lexer can parse symbols", "[Lexer]")
+SCENARIO("A lexer can parse a series of symbols delimited by white space", "[Lexer]")
 {
-    GIVEN("A lexer for a string containing all symbols")
-    {
-        Lexer lexer("`~!@#$%^&*()-_=+[{]}\\|;:'\",<.>/?");
-        THEN("Each token is recognized as a symbol")
-        {
-            while (lexer.next())
-            {
-                REQUIRE(lexer.token_type() == TokenType::Symbol);
-            }
-        }
-    }
+    Lexer lexer("()  [\t]\n?");
+
+    REQUIRE(lexer.next());
+    REQUIRE_FALSE(lexer.skipped_whitespace());
+    REQUIRE_FALSE(lexer.skipped_newline());
+    REQUIRE(lexer.token_type() == TokenType::Symbol);
+    REQUIRE(lexer.token_id() == '(');
+
+    REQUIRE(lexer.next());
+    REQUIRE_FALSE(lexer.skipped_whitespace());
+    REQUIRE_FALSE(lexer.skipped_newline());
+    REQUIRE(lexer.token_type() == TokenType::Symbol);
+    REQUIRE(lexer.token_id() == ')');
+
+    REQUIRE(lexer.next());
+    REQUIRE(lexer.skipped_whitespace());
+    REQUIRE_FALSE(lexer.skipped_newline());
+    REQUIRE(lexer.token_type() == TokenType::Symbol);
+    REQUIRE(lexer.token_id() == '[');
+
+    REQUIRE(lexer.next());
+    REQUIRE(lexer.skipped_whitespace());
+    REQUIRE_FALSE(lexer.skipped_newline());
+    REQUIRE(lexer.token_type() == TokenType::Symbol);
+    REQUIRE(lexer.token_id() == ']');
+
+    REQUIRE(lexer.next());
+    REQUIRE(lexer.skipped_whitespace());
+    REQUIRE(lexer.skipped_newline());
+    REQUIRE(lexer.token_type() == TokenType::Symbol);
+    REQUIRE(lexer.token_id() == '?');
+
+    REQUIRE_FALSE(lexer.next());
 }

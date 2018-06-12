@@ -25,6 +25,7 @@
 
 #include "Export.hpp"
 #include <stack>
+#include <string>
 
 namespace nominal
 {
@@ -48,15 +49,21 @@ public:
     bool next();
 
     TokenType token_type() const;
-    TokenId token_Id() const;
+    TokenId token_id() const;
+
+    bool is_token(TokenType type) const;
+    bool is_token(TokenType type, TokenId id) const;
+    bool is_token(TokenType type, const std::string& string) const;
 
     void push_state();
     bool pop_state(bool restore);
 
+    bool skipped_whitespace() const;
+    bool skipped_newline() const;
+
 private:
     char read_next();
     char peak_next();
-    bool skip_whitespace();
 
     struct State
     {
@@ -67,7 +74,7 @@ private:
         TokenType token_type{ TokenType::Symbol };
         TokenId token_id{ 0 };
         bool skipped_whitespace{ false };
-        bool skipped_new_line{ false };
+        bool skipped_newline{ false };
         bool end_of_input{ false };
     };
 

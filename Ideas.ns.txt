@@ -1,0 +1,92 @@
+
+fibonacci: (n: Int) -> Int
+{
+    if (n < 2)
+    {
+        return n
+    }
+    else
+    {
+        return fibonacci(n - 1) + fibonacci(n - 2)
+    }
+}
+
+Node: data
+{
+    value: Int
+    parent: Node~?
+    child: Node^
+}
+
+main: () 
+{
+    root := Node { value = 1, parent = null, }
+
+
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// Variants
+enum Error
+{
+    None
+    Message(String)
+}
+
+fn something() -> Error
+{
+    if (what)
+    {
+        Error:None
+    }
+    else
+    {
+        Error:Message("Not what")
+    }
+}
+
+let x = something()
+match (x)
+{
+    Error:None
+    {
+        print("Something!")
+    }
+    Error:Message(message)
+    {
+        print("Not something because: {0}", message)
+    }
+}
+
+
+
+
+
+
+
+
+
+// Nullable
+something: (x: Int)
+{
+}
+

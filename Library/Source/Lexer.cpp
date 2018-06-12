@@ -22,6 +22,7 @@
 // IN THE SOFTWARE.
 ///////////////////////////////////////////////////////////////////////////////
 #include "Nominal/Lexer.hpp"
+#include <cctype>
 
 namespace nominal
 {
@@ -29,24 +30,138 @@ namespace nominal
 Lexer::Lexer(const char* source) :
     _source(source)
 {
-    next();
 }
 
 bool Lexer::next()
 {
-    if (skip_whitespace())
-    {
-        _current_state.token_type = TokenType::Symbol;
+    _current_state.skipped_whitespace = false;
+    _current_state.skipped_newline = false;
 
-        char c = read_next();
-        return _current_state.end_of_input;
-    }
+    char c;
+
+    // Skip whitespace
+    do
+    {
+        c = read_next();
+
+        if (c == '\0')
+        {
+            _current_state.skipped_whitespace = false;
+            _current_state.skipped_newline = false;
+            return false;
+        }
+
+        if (isspace(c))
+        {
+            _current_state.skipped_whitespace = true;
+        }
+
+        if (c == '\n')
+        {
+            _current_state.skipped_newline = true;
+        }
+
+        // Skip single-line comments
+        if (c == '-' && peak_next() == '-')
+        {
+            _current_state.skipped_whitespace = true;
+            read_next();
+
+            do
+            {
+                c = read_next();
+                if (c == '\0')
+                {
+                    return false;
+                }
+            } while (c != '\n');
+            _current_state.skipped_newline = true;
+
+            c = read_next();
+            if (c == '\0')
+            {
+                return false;
+            }
+        }
+
+        // Skip mutli-line comments
+        if (c == '{' && peak_next() == '-')
+        {
+            read_next();
+
+            do
+            {
+                c = read_next();
+                if (c == '\0')
+                {
+                    return false;
+                }
+                else if (c == '\n')
+                {
+                    _current_state.skipped_newline = true;
+                }
+            } while ((c != '-' || peak_next() != '}') && c != '\0');
+
+            read_next();
+            c = read_next();
+            if (c == '\0')
+            {
+                return false;
+            }
+            else if (c == '\n')
+            {
+                _current_state.skipped_newline = true;
+            }
+
+            _current_state.skipped_whitespace = true;
+        }
+    } while (isspace(c));
 
     // Keep the token's start index and assume it is at least length 1
     _current_state.token_start_index = _current_state.index - 1;
     _current_state.token_length = 1;
+    
+    // Identifier
+    if (isalpha(c))
+    {
+        while (isalnum(peak_next()))
+        {
+            read_next();
+            ++_current_state.token_length;
+        }
 
-    return false;
+        _current_state.token_type = TokenType::Identifier;
+        return true;
+    }
+
+    // Number
+    if (isdigit(c))
+    {
+        while (isdigit(peak_next()))
+        {
+            read_next();
+            ++_current_state.token_length;
+        }
+
+        if (peak_next() == '.')
+        {
+            read_next();
+            ++_current_state.token_length;
+
+            while (isdigit(peak_next()))
+            {
+                read_next();
+                ++_current_state.token_length;
+            }
+        }
+
+        _current_state.token_type = TokenType::Number;
+        return true;
+    }
+
+    _current_state.token_id = c;
+    _current_state.token_type = TokenType::Symbol;
+    return true;
 }
 
 TokenType Lexer::token_type() const
@@ -54,7 +169,7 @@ TokenType Lexer::token_type() const
     return _current_state.token_type;
 }
 
-TokenId Lexer::token_Id() const
+TokenId Lexer::token_id() const
 {
     return _current_state.token_id;
 }
@@ -79,6 +194,16 @@ bool Lexer::pop_state(bool restore)
         _state_stack.pop();
         return true;
     }
+}
+
+bool Lexer::skipped_whitespace() const
+{
+    return _current_state.skipped_whitespace;
+}
+
+bool Lexer::skipped_newline() const
+{
+    return _current_state.skipped_newline;
 }
 
 char Lexer::read_next()
@@ -112,13 +237,6 @@ char Lexer::peak_next()
     {
         return _source[_current_state.index];
     }
-}
-
-bool Lexer::skip_whitespace()
-{
-    _current_state.skipped_whitespace = false;
-    _current_state.skipped_new_line = false;
-    return true;
 }
 
 }
